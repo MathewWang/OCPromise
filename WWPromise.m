@@ -13,7 +13,7 @@
 @property (nonatomic, copy) ResolveFunc resolveFunc;
 @property (nonatomic, copy) RejectFunc rejectFunc;
 @property (nonatomic, strong) WWPromise *next;
-
+@property (nonatomic, copy) void(^executionFunc)(ResolveFunc, RejectFunc);
 @end
 
 @implementation WWPromise
@@ -27,6 +27,7 @@
 
 - (instancetype)initWithFunc:(void(^)(ResolveFunc, RejectFunc)) func{
     if (self = [super init]) {
+        self.executionFunc = func;
         id(^tmpResolve)(id) = ^(id result){
             if (self.resolveFunc) {
                 id preReturnValue = self.resolveFunc(result);
@@ -36,20 +37,20 @@
                     self.next = preReturnValue;
                     self.next.then(self.next.resolveFunc, self.next.rejectFunc);
                 }else{
-                    if (self.next) {
-                        func(self.next.resolveFunc, self.next.rejectFunc);
+                    if (self.next && (self.next.resolveFunc || self.rejectFunc)) {
+                        self.executionFunc(self.next.resolveFunc, self.next.rejectFunc);
                     }
                 }
                 return preReturnValue;
             }
-            return (id)nil;
+            return [WWPromise empty];
         };
         void(^tmpError)(id) = ^(id error){
             if (self.rejectFunc) {
                 self.rejectFunc(error);
             }
         };
-        func(tmpResolve, tmpError);
+        self.executionFunc(tmpResolve, tmpError);
     }
     return self;
 }
@@ -65,6 +66,10 @@
 
 + (id)empty{
     return nil;
+}
+
+- (void)dealloc{
+    NSLog(@"###promise dealloc");
 }
 
 @end
