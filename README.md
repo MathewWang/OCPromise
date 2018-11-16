@@ -31,4 +31,30 @@
       return [ORPromise empty];
   });
   
+  
+// mixture example
+    WWPromise.promise(^(ResolveFunc resolve, RejectFunc reject){
+        resolve(@"test");
+    })
+    .then(^(id result){
+        NSLog(@"%@ -- 1", result);
+        return [ORPromise empty];
+    }, nil)
+    .then(^(id result){
+        NSLog(@"%@ -- 2", result);
+        return [ORPromise empty];
+    }, nil)
+    .then(^(id result){
+        NSLog(@"%@ -- 3", result);
+        return     ORPromise.promise(^(ResolveFunc resolve, RejectFunc reject){
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                resolve(@"hello ");
+            });
+        });
+    }, nil)
+    .then(^(id result){
+        NSLog(@"%@ -- 4", result);
+        return [ORPromise empty];
+    }, nil);
+  
 ```
